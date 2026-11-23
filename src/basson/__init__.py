@@ -1,3 +1,5 @@
+__VERSION__ = "0.4.0"
+
 from .api import (
     BASS,       # API provider
     BASSError   # Exception class
@@ -6,7 +8,6 @@ from .api import (
 from .basson import (
     Basson      # Main wrapper class
 )
-Basson = Basson #HACK if import library as tells `readme.md`, for acess requied `from basson import basson`, instead just a `import bassson`. Solution provided by AI and requied testing 
 
 from .header import ( # Flags and Enums. OG
     #1                  #2                  #3                  #4
@@ -35,8 +36,6 @@ from .record import (
     Record
 )
 
-from .utils import get_os
-
 __all__ = [
     "BASS", "BASSError", 
     "Basson",
@@ -56,6 +55,4 @@ __all__ = [
     "StreamFile",       "StreamURL",
     "Music",
     "Record",
-
-    "get_os"
     ]

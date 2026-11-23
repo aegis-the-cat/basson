@@ -2,7 +2,7 @@ import time
 import basson
 import os
 
-player = basson.Basson(os.path.join('dll', 'bass_x64.dll'))
+player = basson.Basson(os.path.join('dll', 'bass.dll'))
 print(player.version)
 player.init(-1, 44100, basson.DeviceFlag.STEREO)
 mp3 = basson.StreamFile(player, 0, os.path.join('some_audio.mp3'), 0, 0, basson.CommonFlag.UNICODE)

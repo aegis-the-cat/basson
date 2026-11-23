@@ -7,7 +7,7 @@ Basson | BASS | Comment
 --- | --- | ---
 `Basson.error_code`   | `BASS_ErrorGetCode()` | Wraper itself raises `BASSError` and other exceptions, if BASS function returns 'error' value. Of course, if `Basson.__init__(.., safe_execution=True)`
 `Basson.__delattr__()` | `BASS_Free()` | After object destruction BASS frees himself
-`Basson.cpu_usage`    | `BASS_GetCPU()` | Renamed for ease of understanding
+`Basson.cpu_usage`    | `BASS_GetCPU()` | Renamed for a more precise meaning
 `Basson.device`       | `BASS_GetDevice()`, `BASS_SetDevice()` | 
 `Basson.volume`       | `BASS_GetVolume()`, `BASS_SetVolume()` | 
 `Basson.version`      | `BASS_GetVersion()` | Returns decoded `str` or hex `int`
@@ -16,7 +16,7 @@ Basson | BASS | Comment
 `Basson.stop()`       | `BASS_Stop()` | 
 `Basson.update()`     | `BASS_Update()` | 
 `Basson.init()`       | `BASS_Init()` | 
-`Basson.status`       | `BASS_IsStarted()` | Renamed for ease of understanding
+`Basson.status`       | `BASS_IsStarted()` | Renamed for a more precise meaning
 `Basson.device_info()` | `BASS_GetDeviceInfo()` | 
 `Basson.info()`       | `BASS_GetInfo()` | 
 \-                  | `BASS_GetConfig()`, `BASS_GetConfigPtr`, `BASS_SetConfig()`, `BASS_SetConfigPtr()` | All configs implemented in main class as properties
@@ -78,10 +78,10 @@ NIE                     | `BASS_ChannelGet3DAttributes()` |
 NIE                     | `BASS_ChannelGet3DPosition()` |
 NIE                     | `BASS_ChannelGetData()` |
 `Basson.Channel.deivce` | `BASS_ChannelGetDevice()`, `BASS_ChannelSetDevice()` |
-`Basson.Channel.length`, `Basson.Channel.length_get()` | `BASS_ChannelGetLength()` | Renamed for ease of understanding. Have simple property as assign for main function
+`Basson.Channel.length`, `Basson.Channel.length_get()` | `BASS_ChannelGetLength()` | Renamed for a more precise meaning. Have simple property as assign for main function
 NIE                     | `BASS_ChannelLevel()` |
-`Basson.Channel.position`, `Basson.Channel.position_get()`, `Basson.Channel.position_set()` | `BASS_ChannelGetPosition()`, `BASS_ChannelSetPosition()`| Renamed for ease of understanding. Have simple property as assign for main function
-`Basson.Channel.status` | `BASS_ChannelIsActive()` | Renamed for ease of understanding
+`Basson.Channel.position`, `Basson.Channel.position_get()`, `Basson.Channel.position_set()` | `BASS_ChannelGetPosition()`, `BASS_ChannelSetPosition()`| Renamed for a more precise meaning. Have simple property as assign for main function
+`Basson.Channel.status` | `BASS_ChannelIsActive()` | Renamed for a more precise meaning
 NIE                     | `BASS_ChannelIsSliding()` |
 NIE                     | `BASS_ChannelSlideAttribute()` |
 `Basson.Channel.lock()` | `BASS_ChannelLock()` |

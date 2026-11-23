@@ -17,7 +17,7 @@ class BassTkPlayer:
 
         # === Init Bass ===
         if get_os() == "windows":
-            lib = os.path.join("dll", "bass_x64.dll")
+            lib = os.path.join("dll", "bass.dll")
             self.unicode = basson.CommonFlag.UNICODE
         else:
             lib = os.path.join("dll", "libbass.dylib")

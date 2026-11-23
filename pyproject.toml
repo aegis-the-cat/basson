@@ -1,22 +1,38 @@
 [project]
 name = "basson"
-version = "0.3.2"
-authors = [
-   { name="Leo 52044", email="lev.portnyagin@vk.com" },]
+dynamic = ["version"]
+authors = [{ name="aegis (the cat)", email="spam.rg@yandex.ru" }]
 description = "Easy-to-use wrapper for BASS audio library"
-readme = "README.md"
+license = "MIT"
+license-files = ["basson.LICENSE", "bass.LICENSE"]
+readme = "readme.md"
 requires-python = ">=3.10.0"
 classifiers = [
-   "Programming Language :: Python :: 3",
+   "Programming Language :: Python :: 3 :: Only",
    "License :: OSI Approved :: MIT License",
-   "Operating System :: OS Independent",]
+   "Operating System :: OS Independent"
+   ]
 
 [project.urls]
-Homepage = "https://github.com/52044/basson"
+Homepage = "https://github.com/aegis-the-cat/basson"
+
+[dependency-groups]
+    dev = ["ruff", "pytest", "build", "twine"]
 
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.setuptools]
-packages = ["basson"]
+[tool.hatch.version]
+path = "src/basson/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/basson"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/basson/", 
+    "readme.md", "docs/",
+    "basson.LICENSE", 
+    "bass.LICENSE", 
+    "pyproject.toml"]

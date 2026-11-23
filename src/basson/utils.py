@@ -1,11 +1,13 @@
 # Some useful utiliies
 
 import ctypes
+import os, sys
+import pathlib
+from . import api
 
 def get_os() -> str:
     """ Returns OS name"""
     import platform
-    import os
 
     system = platform.system().lower()
     if system == 'windows':
@@ -34,6 +36,36 @@ def get_os() -> str:
         return 'aix'
     else:
         return 'unknown'
+
+def load_dll(predefined_path: str = None) -> list:
+    ''' Find a `bass.*` lib in system'''
+
+    # Detect OS
+    match sys.platform:
+        case 'win32':
+            dll_name = 'bass.dll'
+            loader = ctypes.WinDLL
+        case 'darwin':
+            dll_name = 'libbass.dylib' #FIXME check
+            loader = ctypes.CDLL
+        case 'linux':
+            dll_name = 'libbass.so' #FIXME check
+            loader = ctypes.CDLL
+        case _:
+            raise ValueError('Unsupported OS')
+
+    # Check predefined path
+    if predefined_path is not None:
+        if pathlib.Path(predefined_path).is_dir():
+            predefined_path = pathlib.Path(predefined_path / dll_name)
+        if pathlib.Path(predefined_path).is_file():
+            dll = pathlib.Path(predefined_path)
+    #TODO ENV variable
+    #TODO in python.exe folder
+    #TODO in system
+
+    if dll is None: raise FileNotFoundError(f'{dll_name} not found')
+    return loader(dll)
 
 def get_locale() -> str:
     ''' Return OS locale encoder name '''

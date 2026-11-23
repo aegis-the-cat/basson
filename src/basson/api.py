@@ -3,6 +3,7 @@ This file contains all API for BASS library
 """
 
 from .header import *
+from . import utils
 
 BASSAPI = 0x204
 """ BASS API version """
@@ -10,29 +11,18 @@ BASSAPI = 0x204
 #region BASS instance
 class BASS:
     """ BASS API provider"""
-    def __init__(self, dll_path:str, safe=True):
+    def __init__(self, dll_path:str|None, safe=True):
         """ Creates a new instance of the BASS library\n
         * On Windows, use `BASS.dll`
         * On MacOS, use `libbass.dylib`
         * On Linux, use `libbass.so`
         
-        :param dll_path: Path to the BASS library. 
-        :param safe: If True, wrapper will be raise errors, if BASS returns an error value
+        :param dll_path: Path to the BASS library. If `none` - try to load the library from the system.
+        :param safe: If True, wrapper will be raise errors, if BASS returns an error value.
         """
+        # Load DLL
+        self.dll = utils.load_dll(dll_path)
 
-        # Load the library
-        from . import utils
-        match utils.get_os():
-            case 'windows':
-                self.dll = ctypes.WinDLL(dll_path)
-                """ `ctypes` library object"""
-            case 'macos':
-                self.dll = ctypes.CDLL(dll_path)
-            case 'linux':
-                self.dll = ctypes.CDLL(dll_path)
-            case _:
-                raise OSError('Unsupported OS')
-        
         # Define the functions
         self._define_functions()
 

@@ -1,13 +1,13 @@
 # Venv and cache
 __pycache__
 *venv
+uv.lock
 
 # Developer tools
 .vscode
 *.old
-develop/
+dev/
 chms/
-*.egg-info/
 
 # DLLs
-dll
+dll/
