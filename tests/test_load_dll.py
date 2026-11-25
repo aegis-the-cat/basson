@@ -1,3 +1,32 @@
-def test_dll_is_not_provided(monkeypatch, tmp_patch):
-    fake_path = "/bin/dll/nonexist.dll"
-    #TODO 
+import pytest
+import basson
+
+import sys
+
+def test_unsupported_os(monkeypatch):
+    monkeypatch.setattr(sys, 'platform', 'unsupported')
+    with pytest.raises(ValueError) as e:
+        basson.BASS()
+
+        assert e == ValueError
+
+def test_find_system_dll():
+    with pytest.raises(FileNotFoundError) as e:
+        basson.BASS("nonexistent.dll")
+
+        assert e == FileNotFoundError
+
+def test_load_dll_by_path():
+    import pathlib
+
+    match sys.platform:
+        case "win32": name = "bass.dll"
+        case "darwin": name = "libbass.dylib"
+        case "linux": name = "libbass.so"
+        case _: pytest.skip("Unsupported platform")
+
+    path = pathlib.Path(pathlib.Path(sys.executable).parent / "bass" / name)
+    if not path.exists(): pytest.skip("libbass.dylib not found")
+
+    bass = basson.BASS(path)
+    assert bass.GetVersion() != 0 

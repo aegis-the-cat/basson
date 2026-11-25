@@ -5,13 +5,12 @@ This file contains all API for BASS library
 from .header import *
 from . import utils
 
-BASSAPI = 0x204
-""" BASS API version """
+import sys, pathlib
 
 #region BASS instance
 class BASS:
     """ BASS API provider"""
-    def __init__(self, dll_path:str|None, safe=True):
+    def __init__(self, dll_path:str = None, safe=True):
         """ Creates a new instance of the BASS library\n
         * On Windows, use `BASS.dll`
         * On MacOS, use `libbass.dylib`
@@ -20,10 +19,38 @@ class BASS:
         :param dll_path: Path to the BASS library. If `none` - try to load the library from the system.
         :param safe: If True, wrapper will be raise errors, if BASS returns an error value.
         """
-        # Load DLL
-        self.dll = utils.load_dll(dll_path)
+        ### Load DLL
+        # Detect OS
+        match sys.platform:
+            case 'win32':
+                dll_name = 'bass.dll'
+                loader = ctypes.WinDLL
+            case 'darwin':
+                dll_name = 'libbass.dylib'
+                loader = ctypes.CDLL
+            case 'linux':
+                dll_name = 'libbass.so' #FIXME check
+                loader = ctypes.CDLL
+            case _:
+                raise ValueError('Unsupported OS')
+        
+        # Check predefined path
+        #NOTE yes, it can be not a regular filename
+        if dll_path is not None:
+            if pathlib.Path(dll_path).is_dir():
+                dll_path = pathlib.Path(dll_path / dll_name)
+            if pathlib.Path(dll_path).is_file():
+                dll_path = pathlib.Path(dll_path)
+            else:
+                raise FileNotFoundError(f'{dll_path} not found')
+        #TODO ENV variable
+        #TODO in python.exe folder
+        #TODO in system
+        
+        if dll_path is None: raise FileNotFoundError('BASS library doesn\'t found in system')
+        self.dll = loader(dll_path)
 
-        # Define the functions
+        ### Define the functions
         self._define_functions()
 
         self.safe = safe
@@ -351,6 +378,7 @@ class BASS:
     def __del__(self):
         try: self.Free()
         except BASSError.Init: pass # BASS_Init never called (err 8), so whatever
+        except AttributeError: pass # If failed load a dll. #TODO check, if anything else can raise this exception
         
     #region BASS / Config
     def GetConfig(self, option: DWORD) -> DWORD:
