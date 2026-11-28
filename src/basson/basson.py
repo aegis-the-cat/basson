@@ -13,7 +13,6 @@ class Basson():
         self.VERSION = __VERSION__
         ''' Version of wrapper.\n\n For getting version of loaded BASS library, use lowercase `version` property'''
 
-        #if dll_path == None: raise ValueError('Path to BASS library is invalid')
         self.bass = BASS(dll_path, safe_execution)
 
         self._has_record_channel = True # Flag for `Record` channel
@@ -176,52 +175,49 @@ class Basson():
 #endregion
 
 # region Config
-#TODO proper docstring in this section
-    def _getconf(self, option:str): 
+    def _getconf(self, option:str):
         try:
             return self.bass.GetConfig(option)
-        except BASSError.Illparam:
-                return None
-    def _setconf(self, option:str, value:str): 
+        except BASSError.OK:
+            return MINUSONE
+    def _setconf(self, option:str, value:str):
         self.bass.SetConfig(option, value)
     def _getconfptr(self, option:str):
-        try:
-            return self.bass.GetConfigPtr(option)
-        except BASSError.Illparam:
-                return None
+        return self.bass.GetConfigPtr(option)
     def _setconfptr(self, option:str, value:str): 
         self.bass.SetConfigPtr(option, value)
 
     @property
-    def algorithm3d(self) -> D3AlorithmsOption:  
+    def algorithm3d(self) -> D3AlgorithmsOption:  
         ''' The positioning algorithm for 3D channels '''
         return self._getconf(cfgo.ALGORITHM3D)
     @algorithm3d.setter
-    def algorithm3d(self, algo: D3AlorithmsOption): 
+    def algorithm3d(self, algo: D3AlgorithmsOption): 
         self._setconf(cfgo.ALGORITHM3D, algo)
 
     @property
-    def am_disable(self) -> bool: 
-        ''' `[Android]` Disable usage of Android media codecs'''
-        result = self._getconf(cfgo.AM_DISABLE)
-        return result
-    @am_disable.setter
-    def am_disable(self, disable: bool): 
-        if self._isandroid:
-            self._setconf(cfgo.AM_DISABLE, disable)
+    def android_disable_mediacodecs(self) -> bool: 
+        ''' `[Android]` Disable usage of Android media codecs 
+        :raises BASSError.Illparam: Property avaliable only on Android'''
+        return bool(self._getconf(cfgo.AM_DISABLE))
+    @android_disable_mediacodecs.setter
+    def android_disable_mediacodecs(self, disable: bool):
+        self._setconf(cfgo.AM_DISABLE, disable)
 
     @property
     def android_aaudio(self) -> bool: 
-        ''' `[Android]` Enable AAudio outpt on Android'''
-        result = self._getconf(cfgo.ANDROID_AAUDIO)
-        return None if result == MINUSONE else result
+        ''' `[Android]` Enable AAudio output on Android
+        :raises BASSError.Illparam: Property avaliable only on Android'''
+        return bool(self._getconf(cfgo.ANDROID_AAUDIO))
     @android_aaudio.setter
     def android_aaudio(self, disable: bool): 
         self._setconf(cfgo.ANDROID_AAUDIO, disable)
 
     @property
     def android_sessionid(self) -> int:
-        ''' `[Android]` Audio session ID to use for output '''
+        ''' `[Android]` Audio session ID to use for output 
+        :raises BASSError.Illparam: Property avaliable only on Android'''
+        #FIXME need to check boundaries on android itself
         result = self._getconf(cfgo.ANDROID_SESSIONID)
         return None if result == MINUSONE else result
     @android_sessionid.setter
@@ -230,7 +226,7 @@ class Basson():
 
     @property
     def asyncfile_buffer(self) -> int: 
-        ''' Buffer length (bytes) for async file reading. Will be rounded up to nearest 4kb.'''
+        ''' Buffer length (bytes) for async file reading.\n\n Will be rounded up to nearest `4kb (8192)`'''
         return self._getconf(cfgo.ASYNCFILE_BUFFER)
     @asyncfile_buffer.setter
     def asyncfile_buffer(self, length: int): 
@@ -238,58 +234,65 @@ class Basson():
 
     @property
     def buffer(self) -> int: 
-        ''' Playback buffer lenght for `HStream` and `HMusic` channels (ms). Capped boundaries: `10 >= length <= 5000`'''
+        ''' Playback buffer lenght for `HStream` and `HMusic` channels (in ms). \n\n Capped boundaries: `10 >= length <= 5000`'''
         return self._getconf(cfgo.BUFFER)
     @buffer.setter
     def buffer(self, length: int):
+        if length <0 : length = 0
         self._setconf(cfgo.BUFFER, length)
 
     @property
-    def curve_vol(self) -> bool:
-        ''' Translations curve of volume values. This config used by `BASS.volume`'''#FIXME ChannelSet3DAttributes  BASS_ATTRIB_VOL
-        return self._getconf(cfgo.CURVE_VOL)
-    @curve_vol.setter
-    def curve_vol(self, logvol: bool): 
+    def curve_volume(self) -> bool:
+        ''' Translations curve of volume values \n\n
+        * `True` - logarithmic volume values
+        * `False` - linear volume values'''
+        return bool(self._getconf(cfgo.CURVE_VOL))
+    @curve_volume.setter
+    def curve_volume(self, logvol: bool): 
         self._setconf(cfgo.CURVE_VOL, logvol)
 
     @property
     def curve_pan(self) -> bool: 
-        ''' Translation curve of panning values. Affect the same way, as `.curve_vol`'''
-        return self._getconf(cfgo.CURVE_PAN)
+        ''' Translation curve of panning values \n\n
+        * `True` - logarithmic panning curve
+        * `False` - linear panning curve'''
+        return bool(self._getconf(cfgo.CURVE_PAN))
     @curve_pan.setter
     def curve_pan(self, logpan: bool): 
         self._setconf(cfgo.CURVE_PAN, logpan)
 
     @property
-    def dev_buffer(self) -> int: 
-        ''' Output device buffer lenght (ms)'''
+    def device_buffer(self) -> int: 
+        ''' Output device buffer lenght (in ms)\n\n Capped boundaries: `0 >= length`'''
         return self._getconf(cfgo.DEV_BUFFER)
-    @dev_buffer.setter
-    def dev_buffer(self, length:int):
-        self._setconf(cfgo.DEV_BUFFER, length)
+    @device_buffer.setter
+    def device_buffer(self, length:int):
+        if length < 0: length = 0
+        try: self._setconf(cfgo.DEV_BUFFER, length)
+        except BASSError.OK: pass
 
     @property
-    def dev_default(self) -> bool: 
-        '''`[Windows, MacOS]` Include `Defalut` entry in output device list '''
-        return self._getconf(cfgo.DEV_DEFAULT)
-    @dev_default.setter
-    def dev_default(self, default:bool):
+    def device_default(self) -> bool: 
+        '''`[Windows, MacOS]` Include `Defalut` entry in output device list ''' #FIXME linux/iOS/Android????
+        return bool(self._getconf(cfgo.DEV_DEFAULT))
+    @device_default.setter
+    def device_default(self, default:bool):
         self._setconf(cfgo.DEV_DEFAULT, default)
 
     @property
-    def dev_nonstop(self) -> bool: 
+    def device_nonstop(self) -> bool: 
         ''' Do not stop output device when nothing is playing on it '''
-        return self._getconf(cfgo.DEV_NONSTOP)
-    @dev_nonstop.setter
-    def dev_nonstop(self, nonstop:bool): 
+        return bool(self._getconf(cfgo.DEV_NONSTOP))
+    @device_nonstop.setter
+    def device_nonstop(self, nonstop:bool): 
         self._setconf(cfgo.DEV_NONSTOP, nonstop)
 
     @property
-    def dev_period(self) -> int: 
+    def device_period(self) -> int: 
         ''' Output device update period. If `>0` - in ms, if `<0` - in samples'''
-        return self._getconf(cfgo.DEV_PERIOD)
-    @dev_period.setter
-    def dev_period(self, period:int):
+        return INT(self._getconf(cfgo.DEV_PERIOD)).value
+    @device_period.setter
+    def device_period(self, period:int):
         self._setconf(cfgo.DEV_PERIOD, period)
 
     @property
@@ -300,33 +303,39 @@ class Basson():
     @property
     def floatdsp(self) -> bool: 
         ''' Pass 32-bit float-point sample data to DSP functions '''
-        return self._getconf(cfgo.FLOATDSP)
+        return bool(self._getconf(cfgo.FLOATDSP))
     @floatdsp.setter
     def floatdsp(self, floatdsp:bool): 
         self._setconf(cfgo.FLOATDSP, floatdsp)
 
     @property
-    def gvol_music(self) -> int: 
-        ''' Global MOD music level (0-10k)'''
+    def global_volume_music(self) -> int: 
+        ''' Global MOD music level (`0 - 10000`)\n\n
+        A channel's final `volume = channel volume x global volume / 10000`. For example, if a stream's volume is `0.5` and the global stream volume is `8000`, then effectively the stream's volume level is `0.4 (0.5 x 8000 / 10000 = 0.4)`'''
         return self._getconf(cfgo.GVOL_MUSIC)
-    @gvol_music.setter
-    def gvol_music(self, volume:int): 
+    @global_volume_music.setter
+    def global_volume_music(self, volume:int):
+        if volume < 0: volume = 0
         self._setconf(cfgo.GVOL_MUSIC, volume)
 
     @property
-    def gvol_sample(self) -> int: 
-        ''' Global Sample volume level (0-10k)'''
+    def global_volume_sample(self) -> int: 
+        ''' Global Sample volume level (`0 - 10000`)\n\n
+        A channel's final `volume = channel volume x global volume / 10000`. For example, if a stream's volume is `0.5` and the global stream volume is `8000`, then effectively the stream's volume level is `0.4 (0.5 x 8000 / 10000 = 0.4)`'''
         return self._getconf(cfgo.GVOL_SAMPLE)
-    @gvol_sample.setter
-    def gvol_sample(self, volume:int): 
+    @global_volume_sample.setter
+    def global_volume_sample(self, volume:int): 
+        if volume < 0: volume = 0
         self._setconf(cfgo.GVOL_SAMPLE, volume)
 
     @property
-    def gvol_stream(self) -> int: 
-        ''' Global Stream volume level (0-10k)'''
+    def global_volume_stream(self) -> int: 
+        ''' Global Stream volume level (`0 - 10000`)\n\n
+        A channel's final `volume = channel volume x global volume / 10000`. For example, if a stream's volume is `0.5` and the global stream volume is `8000`, then effectively the stream's volume level is `0.4 (0.5 x 8000 / 10000 = 0.4)`'''
         return self._getconf(cfgo.GVOL_STREAM)
-    @gvol_stream.setter
-    def gvol_stream(self, volume:int): 
+    @global_volume_stream.setter
+    def global_volume_stream(self, volume:int):
+        if volume < 0: volume = 0 
         self._setconf(cfgo.GVOL_STREAM, volume)
 
     @property
@@ -336,7 +345,8 @@ class Basson():
                                           
     @property
     def ios_session(self) -> IOSSessionFlag: 
-        '''[iOS] Audio session configuration'''
+        '''`[iOS]` Audio session configuration\n
+        :raises BASSError.Illparam: Property avaliable only on iOS'''
         #TODO check for -1
         return self._getconf(cfgo.IOS_SESSION)
     @ios_session.setter
@@ -357,27 +367,28 @@ class Basson():
         self._setconf(cfgo.LIBSSL, filename)
 
     @property
-    def mf_disable(self) -> bool: 
-        ''' Disable usage of Media Foundation '''
-        return self._getconf(cfgo.MF_DISABLE)
-    @mf_disable.setter
-    def mf_disable(self, disable:bool):
+    def mediafoundation_disable(self) -> bool: 
+        ''' Disable usage of Media Foundation codecs'''
+        return bool(self._getconf(cfgo.MF_DISABLE))
+    @mediafoundation_disable.setter
+    def mediafoundation_disable(self, disable:bool):
         self._setconf(cfgo.MF_DISABLE, disable)
 
     @property
-    def mf_video(self) -> bool: 
-        ''' Accept playback audio from videofiles using Media Foundation '''
-        return self._getconf(cfgo.MF_VIDEO)
-    @mf_video.setter
-    def mf_video(self, video:bool): 
+    def mediafoundation_video(self) -> bool: 
+        ''' Accept playback audio from videofiles using Media Foundation codecs'''
+        return BOOL(self._getconf(cfgo.MF_VIDEO))
+    @mediafoundation_video.setter
+    def mediafoundation_video(self, video:bool): 
         self._setconf(cfgo.MF_VIDEO, video)
 
     @property
-    def music_virtual(self) -> int:
-        ''' Maximum nuber of virtual channel to use in rendering of `IT` fules''' 
+    def music_max_virtual_channels(self) -> int:
+        ''' Maximum nuber of virtual channel to use in rendering of `IT` files\n\n Capped to `0 - 512`''' 
         return self._getconf(cfgo.MUSIC_VIRTUAL)
-    @music_virtual.setter
-    def music_virtual(self, chans:int): 
+    @music_max_virtual_channels.setter
+    def music_max_virtual_channels(self, chans:int):
+        if chans < 0: chans = 0   
         self._setconf(cfgo.MUSIC_VIRTUAL, chans)
 
     @property
@@ -386,7 +397,7 @@ class Basson():
         return utils.read_ptr(self._getconfptr(cfgo.NET_AGENT), 'str')
     @net_agent.setter
     def net_agent(self, agent:str): 
-        self._setconf(cfgo.NET_AGENT, agent)
+        self._setconfptr(cfgo.NET_AGENT, utils.make_ptr(agent,'str')) 
 
     @property
     def net_buffer(self) -> int: 
@@ -394,12 +405,13 @@ class Basson():
         return self._getconf(cfgo.NET_BUFFER)
     @net_buffer.setter
     def net_buffer(self, length:int):
+        if length <0: length = 0
         self._setconf(cfgo.NET_BUFFER, length)
 
     @property
     def net_meta(self) -> bool: 
         ''' Request Shoutcast metadata from servers '''
-        return self._getconf(cfgo.NET_META)
+        return bool(self._getconf(cfgo.NET_META))
     @net_meta.setter
     def net_meta(self, metadata:bool): 
         self._setconf(cfgo.NET_META, metadata)
@@ -407,7 +419,7 @@ class Basson():
     @property
     def net_passive(self) -> bool: 
         ''' Enable passive mode in FTP connections '''
-        return self._getconf(cfgo.NET_PASSIVE)
+        return bool(self._getconf(cfgo.NET_PASSIVE))
     @net_passive.setter
     def net_passive(self, passive:bool): 
         self._setconf(cfgo.NET_PASSIVE, passive)
@@ -422,54 +434,60 @@ class Basson():
 
     @property
     def net_playlist_depth(self) -> int: 
-        ''' Maximum nested playlist processing depth '''
+        ''' Maximum nested playlist processing depth\n\n
+        `0` - do not process nested playlists'''
         return self._getconf(cfgo.NET_PLAYLIST_DEPTH)
     @net_playlist_depth.setter
     def net_playlist_depth(self, depth:int):
+        if depth <0 : depth = 0
         self._setconf(cfgo.NET_PLAYLIST_DEPTH, depth)
     
     @property
-    def net_prebuf(self) -> int: 
-        ''' Amount to pre-buffer before playing internet streams (%)'''
+    def net_prebuffer(self) -> int: 
+        ''' Amount to pre-buffer before playing internet streams, in `%`'''
         return self._getconf(cfgo.NET_PREBUF)
-    @net_prebuf.setter
-    def net_prebuf(self, length:int): 
+    @net_prebuffer.setter
+    def net_prebuffer(self, length:int):
+        if length <0: length = 0
         self._setconf(cfgo.NET_PREBUF, length)
     
     @property
     def net_proxy(self) -> str|None: 
         ''' Proxy server settings\n
-        `None` - Do not use proxy\n
-        `empty string` - Use OS proxy settings\n
-        `server:port` - Connect to proxy w/a auth\n
-        `user:pass@server:port` - Connect to proxy w/ auth'''
+        * `None` - Do not use proxy
+        * `empty string` - Use OS proxy settings
+        * `server:port` - Connect to proxy w/a auth
+        * `user:pass@server:port` - Connect to proxy w/ auth'''
         return utils.read_ptr(self._getconfptr(cfgo.NET_PROXY), 'str')
     @net_proxy.setter
     def net_proxy(self, proxy:str|None): 
-        self._setconf(cfgo.NET_PROXY, proxy)
+        self._setconfptr(cfgo.NET_PROXY, utils.make_ptr(proxy, 'str'))
 
     @property
     def net_readtimeout(self) -> int: 
-        ''' Time to wait for server to deliver more data for an internet stream'''
+        ''' Time to wait for server to deliver more data for an internet stream\n\n `0` - no timeout'''
         return self._getconf(cfgo.NET_READTIMEOUT)
     @net_readtimeout.setter
-    def net_readtimeout(self, timeout:int): 
+    def net_readtimeout(self, timeout:int):
+        if timeout <0: timeout = 0 
         self._setconf(cfgo.NET_READTIMEOUT, timeout)
     
     @property
     def net_restrate(self) -> int: 
-        ''' Restricted download rate for internet file streams (b/s)'''
+        ''' Restricted download rate for internet file streams in `b/s`'''
         return self._getconf(cfgo.NET_RESTRATE)
     @net_restrate.setter
     def net_restrate(self, rate:int):
+        if rate <0: rate = 0
         self._setconf(cfgo.NET_RESTRATE, rate)
 
     @property
     def net_timeout(self) -> int: 
-        ''' Time to wat for a server to respond to a connection request (ms)'''
+        ''' Time to wait for a server to respond to a connection request (ms)\n\n `0` - no timeout'''
         return self._getconf(cfgo.NET_TIMEOUT)
     @net_timeout.setter
     def net_timeout(self, timeout:int): 
+        if timeout <0 : timeout = 0
         self._setconf(cfgo.NET_TIMEOUT, timeout)
 
     @property
@@ -483,7 +501,7 @@ class Basson():
     @property
     def ogg_prescan(self) -> bool: 
         ''' Pre-scan chained OGG files '''
-        return self._getconf(cfgo.OGG_PRESCAN)
+        return bool(self._getconf(cfgo.OGG_PRESCAN))
     @ogg_prescan.setter
     def ogg_prescan(self, prescan:bool): 
         self._setconf(cfgo.OGG_PRESCAN, prescan)
@@ -491,23 +509,24 @@ class Basson():
     @property
     def pause_noplay(self) -> bool: 
         ''' Prevent channels playback if output is paused '''
-        return self._getconf(cfgo.PAUSE_NOPLAY)
+        return bool(self._getconf(cfgo.PAUSE_NOPLAY))
     @pause_noplay.setter
     def pause_noplay(self, noplay:bool): 
         self._setconf(cfgo.PAUSE_NOPLAY, noplay)
 
     @property
     def rec_buffer(self) -> int: 
-        '''Buffer length for recording channels (10 ... 5000 ms)'''
+        '''Buffer length for recording channels (`10 - 5000 ms`)'''
         return self._getconf(cfgo.REC_BUFFER)
     @rec_buffer.setter
     def rec_buffer(self, length:int): 
+        if length <0 : length = 0
         self._setconf(cfgo.REC_BUFFER, length)
 
     @property
     def rec_wasapi(self) -> bool: 
         '''[Windows] Enable usage WASAPI when recording'''
-        return self._getconf(cfgo.REC_WASAPI)
+        return bool(self._getconf(cfgo.REC_WASAPI))
     @rec_wasapi.setter
     def rec_wasapi(self, enable:bool): 
         self._setconf(cfgo.REC_WASAPI, enable)
@@ -515,41 +534,59 @@ class Basson():
     @property
     def sample_onehandle(self) -> bool: 
         ''' enable usage of same handle for a sample and its single playback channel '''
-        return self._getconf(cfgo.SAMPLE_ONEHANDLE)
+        return bool(self._getconf(cfgo.SAMPLE_ONEHANDLE))
     @sample_onehandle.setter
     def sample_onehandle(self, onehandle:bool): 
         self._setconf(cfgo.SAMPLE_ONEHANDLE, onehandle)
 
     @property
-    def src(self) -> SamplerateConversionOption|int: 
-        ''' Default samplerate conversion quality'''
+    def samplerate_conversion_quality(self) -> SamplerateConversionOption|int: 
+        ''' Default samplerate conversion quality\n
+        * `0` = linear interpolation
+        * `1` = 8 point sinc interpolation
+        * `2` = 16 point sinc interpolation
+        * `3` = 32 point sinc interpolation
+        * `4` = 64 point sinc interpolation\n
+        Other values are also accepted '''
         return self._getconf(cfgo.SRC)
-    @src.setter
-    def src(self, quality:SamplerateConversionOption|int):
+    @samplerate_conversion_quality.setter
+    def samplerate_conversion_quality(self, quality:SamplerateConversionOption|int):
+        if quality <0: quality = 0 
         self._setconf(cfgo.SRC, quality)
 
     @property
-    def src_sample(self) -> SamplerateConversionOption|int: 
-        ''' Default samplerate conversion quality for sample channels'''
+    def samplerate_conversion_quality_sample(self) -> SamplerateConversionOption|int: 
+        ''' Default samplerate conversion quality for sample channels\n
+        * `0` = linear interpolation
+        * `1` = 8 point sinc interpolation
+        * `2` = 16 point sinc interpolation
+        * `3` = 32 point sinc interpolation
+        * `4` = 64 point sinc interpolation\n
+        Other values are also accepted '''
         return self._getconf(cfgo.SRC_SAMPLE)
-    @src_sample.setter
-    def src_sample(self, quality:SamplerateConversionOption|int): 
+    @samplerate_conversion_quality_sample.setter
+    def samplerate_conversion_quality_sample(self, quality:SamplerateConversionOption|int): 
+        if quality <0: quality = 0 
         self._setconf(cfgo.SRC_SAMPLE, quality)
 
     @property
     def unicode(self) -> bool: 
         ''' Use Unicode in device information'''
-        return self._getconf(cfgo.UNICODE)
+        return bool(self._getconf(cfgo.UNICODE))
     @unicode.setter
     def unicode(self, unicode:bool): 
         self._setconf(cfgo.UNICODE, unicode)
 
     @property
     def updateperiod(self) -> int: 
-        ''' Update period of `HStream` and `HMusic` channel playback buffers (0, 5 ... 100 ms, autocap)'''
+        ''' Update period of `HStream` and `HMusic` channel playback buffers\n
+        * `0` - disable automatic updating
+        * `5` - minimal period, in ms. Less will be ronded up to `5`
+        * `100` - maximal period, in ms'''
         return self._getconf(cfgo.UPDATEPERIOD)
     @updateperiod.setter
-    def updateperiod(self, period:int): 
+    def updateperiod(self, period:int):
+        if period <0 : period = 0
         self._setconf(cfgo.UPDATEPERIOD, period)
 
     @property
@@ -562,24 +599,26 @@ class Basson():
 
     @property
     def verify(self) -> int: 
-        ''' Amount of data to check in order to verify/detect file format (1k ... 1M bytes, autocap)'''
+        ''' Amount of data to check in order to verify/detect file format\n\n `1k - 1M` bytes, autocap'''
         return self._getconf(cfgo.VERIFY)
     @verify.setter
     def verify(self, length:int): 
+        if length <0 : length = 0
         self._setconf(cfgo.VERIFY, length)
 
     @property
     def verify_net(self) -> int: 
-        ''' Amount of data to check in order to verify/detect file format of internet streams (1k ... 1M bytes, autocap)'''
+        ''' Amount of data to check in order to verify/detect file format of internet streams\n\n `1k - 1M` bytes, autocap'''
         return self._getconf(cfgo.VERIFY_NET)
     @verify_net.setter
     def verify_net(self, length:int): 
+        if length <0 : length = 0
         self._setconf(cfgo.VERIFY_NET, length)
 
     @property
     def wasapi_persist(self) -> bool: 
         '''[Windows] Retain Windows mixer settings across sessions'''
-        return self._getconf(cfgo.WASAPI_PERSIST)
+        return bool(self._getconf(cfgo.WASAPI_PERSIST))
     @wasapi_persist.setter
     def wasapi_persist(self, persist:bool):
         self._setconf(cfgo.WASAPI_PERSIST, persist)
@@ -587,11 +626,11 @@ class Basson():
 
 #region Plugins
     #TODO bass plugins
-    def plugin_enable(self, *args):
-        raise NotImplementedError("Plugin functionality not implemented yet.")
-    def plugin_free(self, *args):
-        raise NotImplementedError("Plugin functionality not implemented yet.")
-    def plugin_get_info(self, *args):
-        raise NotImplementedError("Plugin functionality not implemented yet.")
-    def plugin_load(self, *args):
-        raise NotImplementedError("Plugin functionality not implemented yet.")
+    #def plugin_enable(self, *args):
+    #    raise NotImplementedError("Plugin functionality not implemented yet.")
+    #def plugin_free(self, *args):
+    #    raise NotImplementedError("Plugin functionality not implemented yet.")
+    #def plugin_get_info(self, *args):
+    #    raise NotImplementedError("Plugin functionality not implemented yet.")
+    #def plugin_load(self, *args):
+    #    raise NotImplementedError("Plugin functionality not implemented yet.")

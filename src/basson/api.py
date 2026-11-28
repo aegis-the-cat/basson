@@ -511,7 +511,7 @@ class DeviceFlag(IntFlag):
     SOFTWARE        = 0x80000
     """Disable hardware/fastpath output"""
 
-class D3AlorithmsOption(IntEnum):
+class D3AlgorithmsOption(IntEnum):
     """Software 3D mixing algorithms options in `basson.d3algorithm`"""
     DEFAULT          = 0
     '''If at least 4 speakers are available then the sound is panned among them'''
@@ -1038,7 +1038,7 @@ class BASS:
                 dll_name = 'libbass.dylib'
                 loader = ctypes.CDLL
             case 'linux':
-                dll_name = 'libbass.so' #FIXME check
+                dll_name = 'libbass.so'
                 loader = ctypes.CDLL
             case _:
                 raise ValueError('Unsupported OS')
@@ -1067,10 +1067,12 @@ class BASS:
         
         # Loading library by ctype
         if dll_path is None: raise FileNotFoundError('BASS library doesn\'t found in system')
-        self.dll = loader(dll_path)
-
-        # Define the functions
-        self._define_functions()
+        try:
+            self.dll = loader(dll_path) # Load library
+            self._define_functions()    # Define function
+            self.ErrorGetCode()         # Test, if it really BASS 
+        except OSError: raise OSError(f"{dll_path} is not BASS library") #WinError 193 #TODO check on other systems #TODO check, if this execption can be raised other way
+        except AttributeError: raise OSError(f"{dll_path} is not BASS library") #function BASS_ErrorGetCode is not presented. So, this file isn't BASS
 
         self.safe = safe
         """ If True, wrapper will be raise errors, if BASS returns an error value"""
@@ -2175,7 +2177,7 @@ class BASS:
             #case MINUSONE: BASSError.Unknown (BASSError.Unknown.__doc__)
             case _: raise BASSError.Unknown (BASSError.Unknown.__doc__)
             
-class BASSError(BaseException):
+class BASSError(Exception):
     '''
     Class contain all BASS exceptions
     '''

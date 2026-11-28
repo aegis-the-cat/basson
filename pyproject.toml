@@ -18,10 +18,7 @@ Homepage = "https://github.com/aegis-the-cat/basson"
 
 [dependency-groups]
     dev = [
-    "ruff",
-    "pytest",
-    "build",
-    "twine",
+    "ruff", "pytest", "build", "twine"
 ]
 
 [build-system]

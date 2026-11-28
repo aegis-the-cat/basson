@@ -1,4 +1,4 @@
-__VERSION__ = "0.4.1"
+__VERSION__ = "0.4.2"
 
 from .api import (
     BASS,       # API provider
@@ -6,7 +6,7 @@ from .api import (
 
     #1                  #2                  #3                  #4
     Info,               DeviceInfo,
-    ConfigOption,       IOSSessionFlag,     DeviceFlag,         D3AlorithmsOption,
+    ConfigOption,       IOSSessionFlag,     DeviceFlag,         D3AlgorithmsOption,
     CommonFlag,         StatusOption,       NetPlaylistOption,  DXVersionOption,
     NorampOption,       SamplerateConversionOption, ChannelType, DataLengthOption,
     DataFlag,           PosModeOption,      ChannelOption,      SampleFlag,
@@ -39,7 +39,7 @@ __all__ = [
     "Basson",
 
     #1                  #2                  #3                  #4
-    "ConfigOption",     "IOSSessionFlag",   "DeviceFlag",       "D3AlorithmsOption", 
+    "ConfigOption",     "IOSSessionFlag",   "DeviceFlag",       "D3AlgorithmsOption", 
     "CommonFlag",       "StatusOption",     "NetPlaylistOption", "DXVersionOption",
     "NorampOption",     "SamplerateConversionOption", "ChannelType", "DataLengthOption",
     "DataFlag",         "PosModeOption",    "ChannelOption",    "SampleFlag",
