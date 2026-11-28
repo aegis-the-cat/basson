@@ -1,6 +1,6 @@
 from .basson import Basson
 from .channel import Channel
-from . import api, header
+from . import api
 import ctypes
 
 class Record(Channel):

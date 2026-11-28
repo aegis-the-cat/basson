@@ -1,19 +1,20 @@
-from . import api
+from . import __VERSION__
+from .api import *
 from .api import ConfigOption as cfgo
-from .api import MINUSONE
-
-from . import header
 from . import utils
 
 class Basson():
-    def __init__(self, dll_path:str, safe_execution:bool=True):
+    def __init__(self, dll_path:str=None, safe_execution:bool=True):
         ''' Python-frendly wrapper over BASS library
         
         :param dll_path: Path to BASS dll
         :param safe_execution: If BASS after execution command returns `error` value, code will raise exception'''
 
-        if dll_path == None: raise ValueError('Path to BASS library is invalid')
-        self.bass = api.BASS(dll_path, safe_execution)
+        self.VERSION = __VERSION__
+        ''' Version of wrapper.\n\n For getting version of loaded BASS library, use lowercase `version` property'''
+
+        #if dll_path == None: raise ValueError('Path to BASS library is invalid')
+        self.bass = BASS(dll_path, safe_execution)
 
         self._has_record_channel = True # Flag for `Record` channel
 
@@ -90,7 +91,7 @@ class Basson():
         :raises BASSError.NotAvail Updating is already in process'''
         self.bass.Update(length)
     
-    def init(self, device:int, samplerate:int, flags:header.DeviceFlag):
+    def init(self, device:int, samplerate:int, flags:DeviceFlag):
         ''' Initialize output device 
         :param device: Number of desirable audio device.\n
             * `-1` is system default device
@@ -107,27 +108,27 @@ class Basson():
         self.bass.Init(device, samplerate, flags, 0, None)
 
     @property
-    def status(self) -> header.StatusOption:
+    def status(self) -> StatusOption:
         ''' Status of output device '''
         return self.bass.IsStarted()
     
-    def device_info(self, device:int) -> header.DeviceInfo:
+    def device_info(self, device:int) -> DeviceInfo:
         ''' Retrives information on an output device
         :param device: The number of desirable device
         :raises BASSError.Device: `device` is invalid'''
-        info = api.BASS_DEVICEINFO()
+        info = BASS_DEVICEINFO()
         self.bass.GetDeviceInfo(device, info)
-        return header.DeviceInfo(
+        return DeviceInfo(
             driver = info.driver,
             flags = info.flags,
             name = info.name.decode(utils.get_locale())
         )
     
-    def info(self) -> header.Info:
+    def info(self) -> Info:
         ''' Get information of current using device. '''
-        info = api.BASS_INFO()
+        info = BASS_INFO()
         self.bass.GetInfo(info)
-        return header.Info(
+        return Info(
             dsver = info.dsver,
             flags = info.flags,
             freq = info.freq,
@@ -159,11 +160,11 @@ class Basson():
     #    self.bass.RecordInit(device)
     #    self.bass.RecordSetDevice(device)
 
-    def record_device_info(self, device) -> header.DeviceInfo:
+    def record_device_info(self, device) -> DeviceInfo:
         ''' Retrives information about certain recording device '''
-        info = api.BASS_DEVICEINFO()
+        info = BASS_DEVICEINFO()
         self.bass.RecordGetDeviceInfo(device, info)
-        return header.DeviceInfo(
+        return DeviceInfo(
             name = (info.name).decode(utils.get_locale()),
             flags = info.flags,
             driver = info.driver
@@ -179,24 +180,24 @@ class Basson():
     def _getconf(self, option:str): 
         try:
             return self.bass.GetConfig(option)
-        except api.BASSError.Illparam:
+        except BASSError.Illparam:
                 return None
     def _setconf(self, option:str, value:str): 
         self.bass.SetConfig(option, value)
     def _getconfptr(self, option:str):
         try:
             return self.bass.GetConfigPtr(option)
-        except api.BASSError.Illparam:
+        except BASSError.Illparam:
                 return None
     def _setconfptr(self, option:str, value:str): 
         self.bass.SetConfigPtr(option, value)
 
     @property
-    def algorithm3d(self) -> header.D3AlorithmsOption:  
+    def algorithm3d(self) -> D3AlorithmsOption:  
         ''' The positioning algorithm for 3D channels '''
         return self._getconf(cfgo.ALGORITHM3D)
     @algorithm3d.setter
-    def algorithm3d(self, algo: header.D3AlorithmsOption): 
+    def algorithm3d(self, algo: D3AlorithmsOption): 
         self._setconf(cfgo.ALGORITHM3D, algo)
 
     @property
@@ -334,12 +335,12 @@ class Basson():
         return self._getconf(cfgo.HANDLES)
                                           
     @property
-    def ios_session(self) -> header.IOSSessionFlag: 
+    def ios_session(self) -> IOSSessionFlag: 
         '''[iOS] Audio session configuration'''
         #TODO check for -1
         return self._getconf(cfgo.IOS_SESSION)
     @ios_session.setter
-    def ios_session(self, config: header.IOSSessionFlag): 
+    def ios_session(self, config: IOSSessionFlag): 
         self._setconf(cfgo.IOS_SESSION, config)
 
     @property
@@ -412,11 +413,11 @@ class Basson():
         self._setconf(cfgo.NET_PASSIVE, passive)
     
     @property
-    def net_playlist(self) -> header.NetPlaylistOption: 
+    def net_playlist(self) -> NetPlaylistOption: 
         ''' Enable process URLs in PSL and M3U playlists'''
         return self._getconf(cfgo.NET_PLAYLIST)
     @net_playlist.setter
-    def net_playlist(self, playlist:header.NetPlaylistOption): 
+    def net_playlist(self, playlist:NetPlaylistOption): 
         self._setconf(cfgo.NET_PLAYLIST, playlist)
 
     @property
@@ -472,11 +473,11 @@ class Basson():
         self._setconf(cfgo.NET_TIMEOUT, timeout)
 
     @property
-    def noramp(self) -> header.NorampOption:
+    def noramp(self) -> NorampOption:
         ''' Playback ramping setting'''
         return self._getconf(cfgo.NORAMP)
     @noramp.setter
-    def noramp(self, noramp:header.NorampOption): 
+    def noramp(self, noramp:NorampOption): 
         self._setconf(cfgo.NORAMP, noramp)
 
     @property
@@ -520,19 +521,19 @@ class Basson():
         self._setconf(cfgo.SAMPLE_ONEHANDLE, onehandle)
 
     @property
-    def src(self) -> header.SamplerateConversionOption|int: 
+    def src(self) -> SamplerateConversionOption|int: 
         ''' Default samplerate conversion quality'''
         return self._getconf(cfgo.SRC)
     @src.setter
-    def src(self, quality:header.SamplerateConversionOption|int):
+    def src(self, quality:SamplerateConversionOption|int):
         self._setconf(cfgo.SRC, quality)
 
     @property
-    def src_sample(self) -> header.SamplerateConversionOption|int: 
+    def src_sample(self) -> SamplerateConversionOption|int: 
         ''' Default samplerate conversion quality for sample channels'''
         return self._getconf(cfgo.SRC_SAMPLE)
     @src_sample.setter
-    def src_sample(self, quality:header.SamplerateConversionOption|int): 
+    def src_sample(self, quality:SamplerateConversionOption|int): 
         self._setconf(cfgo.SRC_SAMPLE, quality)
 
     @property
